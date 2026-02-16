@@ -22,4 +22,8 @@ typedef struct {
 
 #define USER_AGENT "Mozilla/5.0 (X11; Linux x86_64; rv:148.0) Gecko/20100101 Firefox/148.0"
 
+#define TTL_MS 250
+
 Buffer *api_get_response(const char *url);
+int api_segment_download(const char *base_url, const char *init_seg,
+                         const char *begin_seg, const char *out_name);

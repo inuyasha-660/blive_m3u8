@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <threads.h>
 
-const char *LogLevelStr[3] = {"Info", "Warn", "Error"};
+const char *LogLevelStr[3] = {"INFO", "WARN", "ERROR"};
 
 const char *LogLevelColor[4] = {
     "\x1b[1;32m", // 绿色

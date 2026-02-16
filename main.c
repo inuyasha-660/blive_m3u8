@@ -3,6 +3,7 @@
 #include "utils/utils.h"
 #include <curl/curl.h>
 #include <stdlib.h>
+#include <threads.h>
 
 LiveInfo *live_info;
 
@@ -35,7 +36,14 @@ void global_cleanup()
 
 int main(int argc, char *argv[])
 {
-    int err = 0;
+    int     err = 0;
+    char   *out_name = NULL;
+    char   *url_m3u8 = NULL;
+    Buffer *buffer_url_m3u8 = NULL;
+    Buffer *buffer_index_m3u8 = NULL;
+    char   *url_qn = NULL;
+    char   *base_url = NULL;
+    char   *init_seg = NULL, *begin_seg = NULL;
 
     // 参数数量校验
     if (argc != 2) {
@@ -63,10 +71,9 @@ int main(int argc, char *argv[])
 
     // 获取 url.m3u8
     info("Fetch url.m3u8");
-    char *url_m3u8 = NULL;
     asprintf(&url_m3u8, "%s?cid=%s&mid=%s", API_URL_M3U8, live_info->cid,
              live_info->mid);
-    Buffer *buffer_url_m3u8 = api_get_response(url_m3u8);
+    buffer_url_m3u8 = api_get_response(url_m3u8);
     if (buffer_url_m3u8 == NULL) {
         error("Aborted and return 1");
         err = 1;
@@ -75,7 +82,7 @@ int main(int argc, char *argv[])
 
     // 获取目标 URL
     info("Fetch url of target qn");
-    char *url_qn = url_get_url(buffer_url_m3u8->buffer);
+    url_qn = url_get_url(buffer_url_m3u8->buffer);
     if (url_qn == NULL) {
         error("Aborted and return 1");
         err = 1;
@@ -84,35 +91,74 @@ int main(int argc, char *argv[])
 
     // 获取 index.m3u8
     info("Fetch index.m3u8");
-    Buffer *buffer_index_m3u8 = api_get_response(url_qn);
+    buffer_index_m3u8 = api_get_response(url_qn);
     if (buffer_index_m3u8 == NULL) {
         error("Aborted and return 1");
-        free(url_qn);
+        err = 1;
+        goto end;
+    }
+
+    // 获取基本 URL
+    info("Parse base url");
+    base_url = get_base_url(url_qn);
+    if (base_url == NULL) {
+        error("Aborted and return 1");
         err = 1;
         goto end;
     }
 
     // 解析初始化片段和开始片段
     info("Parse init_seg and begin_seg");
-    char *init_seg = NULL, *begin_seg = NULL;
     index_m3u8_parser(buffer_index_m3u8->buffer, &init_seg, &begin_seg);
     if (init_seg == NULL || begin_seg == NULL) {
         error("Aborted and return 1");
-        free(buffer_index_m3u8->buffer);
-        free(buffer_index_m3u8);
         err = 1;
         goto end;
     }
 
-    puts(init_seg);
-    puts(begin_seg);
+    // 开始录制
+    info("Start recording");
+    time_t     time_now = time(NULL);
+    struct tm *tm_s = gmtime(&time_now);
+
+    asprintf(&out_name, "%s/%d%02d%d-%s.mp4", live_info->out_path,
+             tm_s->tm_year + 1900, tm_s->tm_mon + 1, tm_s->tm_mday,
+             live_info->mid);
+
+    if (api_segment_download(base_url, init_seg, begin_seg, out_name) < 0) {
+        error("Aborted and return 1");
+        err = 1;
+        goto end;
+    }
 
 end:
     if (url_m3u8 != NULL) {
         free(url_m3u8);
     }
-    free(buffer_url_m3u8->buffer);
-    free(buffer_url_m3u8);
+    if (base_url != NULL) {
+        free(base_url);
+    }
+    if (init_seg != NULL) {
+        free(init_seg);
+    }
+    if (begin_seg != NULL) {
+        free(begin_seg);
+    }
+    if (out_name != NULL) {
+        free(out_name);
+    }
+    if (buffer_index_m3u8->buffer != NULL) {
+        free(buffer_index_m3u8->buffer);
+    }
+    if (buffer_index_m3u8 != NULL) {
+        free(buffer_index_m3u8);
+    }
+    if (buffer_url_m3u8->buffer != NULL) {
+        free(buffer_url_m3u8->buffer);
+    }
+    if (buffer_url_m3u8 != NULL) {
+        free(buffer_url_m3u8);
+    }
     global_cleanup();
     return err;
 }

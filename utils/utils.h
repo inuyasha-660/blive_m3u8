@@ -12,6 +12,17 @@ void _log(int log_level, const char *func, char *format, ...);
 #define warn(...)  _log(LOG_WARN, __FUNCTION__, ##__VA_ARGS__)
 #define error(...)  _log(LOG_ERR, __FUNCTION__, ##__VA_ARGS__)
 
+#if defined(_WIN32)
+    #include <windows.h>
+    #define __sleep_ms(ms) do { Sleep(ms); } while(0)
+#elif defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined (__OpenBSD__) || defined(__APPLE__)
+    #include <time.h> 
+    #define __sleep_ms(ms) do { \
+         \
+    } while (0)
+#else
+#endif
+
 void printn(const char *msg);
 size_t api_curl_finish(void *buffer, size_t size, size_t nmemb, void *userp);
 char *read_file(const char *filename);

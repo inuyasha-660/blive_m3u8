@@ -36,7 +36,7 @@ char *url_get_url(char *m3u8_str)
 int index_m3u8_parser(char *m3u8_str, char **init_seg, char **begin_seg)
 {
     int   err = 0;
-    char *begin_seg_buffer = NULL;
+    char *init_seg_buffer = NULL;
     *init_seg = NULL;
     *begin_seg = NULL;
 
@@ -47,25 +47,39 @@ int index_m3u8_parser(char *m3u8_str, char **init_seg, char **begin_seg)
         }
 
         // 解析初始化片段
-        if (strstr(line, "#EXT-X-MEDIA-SEQUENCE")) {
-            *init_seg = strdup(line + 22);
+        if (strstr(line, "#EXT-X-MAP:URI=")) {
+            init_seg_buffer = strdup(line + 15);
         }
         // 解析开始片段
-        if (strstr(line, "#EXT-X-MAP:URI")) {
-            begin_seg_buffer = strdup(line + 15);
+        if (strstr(line, "#EXT-X-MEDIA-SEQUENCE:")) {
+            *begin_seg = strdup(line + 22);
         }
 
         line = strtok(NULL, "\n");
     }
 
-    if (*init_seg == NULL || begin_seg_buffer == NULL) {
+    if (*begin_seg == NULL || init_seg_buffer == NULL) {
         error("Failed to parse init_seg || begin_seg");
     }
 
-    size_t len_begin_seg_buffer = strlen(begin_seg_buffer);
-    *begin_seg = (char *)malloc((len_begin_seg_buffer) * sizeof(char));
-    snprintf(*begin_seg, len_begin_seg_buffer - 1, "%s", begin_seg_buffer + 1);
+    size_t len_init_seg_buffer = strlen(init_seg_buffer);
+    *init_seg = (char *)malloc((len_init_seg_buffer) * sizeof(char));
+    snprintf(*init_seg, len_init_seg_buffer - 1, "%s", init_seg_buffer + 1);
 
-    free(begin_seg_buffer);
+    free(init_seg_buffer);
     return err;
+}
+
+char *get_base_url(char *url_qn)
+{
+    char *base_url = NULL;
+
+    // 获取 base url 长度
+    char *found = strstr(url_qn, "index.m3u8");
+    long  offset = found - url_qn;
+
+    base_url = (char *)malloc((offset + 1) * sizeof(char));
+    snprintf(base_url, offset + 1, "%s", url_qn);
+
+    return base_url;
 }
