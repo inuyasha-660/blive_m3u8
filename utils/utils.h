@@ -18,9 +18,16 @@ void _log(int log_level, const char *func, char *format, ...);
 #elif defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined (__OpenBSD__) || defined(__APPLE__)
     #include <time.h> 
     #define __sleep_ms(ms) do { \
-         \
+        struct timespec duration = { \
+            .tv_sec = 0, \
+            .tv_nsec = ms * 1000 * 1000 \
+        }; \
+        struct timespec rem; \
+        \
+        nanosleep(&duration, &rem); \
     } while (0)
 #else
+    #error "Unsupported system"
 #endif
 
 void printn(const char *msg);

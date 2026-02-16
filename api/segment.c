@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <threads.h>
-#include <unistd.h>
 
 extern LiveInfo *live_info;
 int              shouldClose = 0;
@@ -62,7 +61,7 @@ int get_should_close(void *arg)
 {
     char  *input = NULL;
     size_t len_input = 0;
-    printn("Type 'q' to finish recording");
+    printn("Type 'q' to stop recording");
     if ((getline(&input, &len_input, stdin) < 0) ||
         (input[0] == 'q' || input[0] == 'Q')) {
         shouldClose = 1;
@@ -91,15 +90,15 @@ int api_segment_download(const char *base_url, const char *init_seg,
         char *url_seg = NULL;
         asprintf(&url_seg, "%s%d.m4s", base_url, idx_seg);
         if (api_download(url_seg, out_name) < 0) {
-            goto end;
+            goto sleep;
         }
-
-        __sleep_ms(TTL_MS);
         idx_seg += 1;
+
+    sleep:
+        __sleep_ms(TTL_MS);
     }
     info("Save to %s", out_name);
 
-end:
     free(url_init_seg);
     return 0;
 }
