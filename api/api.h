@@ -13,4 +13,13 @@ typedef struct {
     char *qn;
 } LiveInfo;
 
-Buffer *api_get_url_m3u8();
+/*
+ * [GET]
+ * cid: 直播间长 ID
+ * mid: 主播 ID
+ */
+#define API_URL_M3U8 "https://api.live.bilibili.com/xlive/play-gateway/master/url"
+
+#define USER_AGENT "Mozilla/5.0 (X11; Linux x86_64; rv:148.0) Gecko/20100101 Firefox/148.0"
+
+Buffer *api_get_response(const char *url);

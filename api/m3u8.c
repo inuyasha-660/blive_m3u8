@@ -1,63 +1,53 @@
 #include "api.h"
 #include "utils/utils.h"
 #include <curl/curl.h>
-#include <curl/easy.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 extern LiveInfo *live_info;
 
-/*
- * [GET]
- * cid: 直播间长 ID
- * mid: 主播 ID
- */
-static const char *API_URL_M3U8 =
-    "https://api.live.bilibili.com/xlive/play-gateway/master/url";
-
-/*
- * 获取 url.m3u8
- *
- * url.m3u8: 包含特定画质的 index.m3u8 获取链接
- */
-Buffer *api_get_url_m3u8()
+Buffer *api_get_response(const char *url)
 {
-    Buffer *buffer_url_m3u8 = NULL;
+    Buffer *buffer = NULL;
     CURL   *curl_url_m3u8;
 
-    if (live_info == NULL) {
-        error("live_info is NULL");
+    if (url == NULL) {
+        error("url is NULL");
         return NULL;
     }
 
     curl_url_m3u8 = curl_easy_init();
     if (curl_url_m3u8) {
-        buffer_url_m3u8 = (Buffer *)malloc(sizeof(Buffer));
-        buffer_url_m3u8->buffer = NULL;
-        buffer_url_m3u8->length = 0;
-        char    *url_url_m3u8 = NULL;
-        CURLcode url_m3u8_code;
+        CURLcode code_response;
+        buffer = (Buffer *)malloc(sizeof(Buffer));
+        buffer->buffer = NULL;
+        buffer->length = 0;
 
-        asprintf(&url_url_m3u8, "%s?cid=%s&mid=%s", API_URL_M3U8,
-                 live_info->cid, live_info->mid);
-
-        curl_easy_setopt(curl_url_m3u8, CURLOPT_URL, url_url_m3u8);
+        curl_easy_setopt(curl_url_m3u8, CURLOPT_URL, url);
         curl_easy_setopt(curl_url_m3u8, CURLOPT_WRITEFUNCTION, api_curl_finish);
-        curl_easy_setopt(curl_url_m3u8, CURLOPT_WRITEDATA, buffer_url_m3u8);
+        curl_easy_setopt(curl_url_m3u8, CURLOPT_WRITEDATA, buffer);
+        curl_easy_setopt(curl_url_m3u8, CURLOPT_USERAGENT, USER_AGENT);
 
-        url_m3u8_code = curl_easy_perform(curl_url_m3u8);
-        if (url_m3u8_code != CURLE_OK) {
-            error("Failed to get url.m3u8");
+        code_response = curl_easy_perform(curl_url_m3u8);
+        if (code_response != CURLE_OK) {
+            error("Failed to get response of %s", url);
+        }
+        // 校验 http 状态码
+        long status_response;
+        curl_easy_getinfo(curl_url_m3u8, CURLINFO_RESPONSE_CODE,
+                          &status_response);
+        if (status_response != 200) {
+            error("Failed to get response: %ld", status_response);
+            curl_easy_cleanup(curl_url_m3u8);
+            free(buffer->buffer);
+            free(buffer);
+            return NULL;
         }
 
-        if (url_url_m3u8 != NULL) {
-            free(url_url_m3u8);
-        }
         curl_easy_cleanup(curl_url_m3u8);
     } else {
         error("Failed to initalize curl_url_m3u8");
         return NULL;
     }
 
-    return buffer_url_m3u8;
+    return buffer;
 }

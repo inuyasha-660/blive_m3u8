@@ -14,3 +14,4 @@ void _log(int log_level, const char *func, char *format, ...);
 
 void printn(const char *msg);
 size_t api_curl_finish(void *buffer, size_t size, size_t nmemb, void *userp);
+char *read_file(const char *filename);
