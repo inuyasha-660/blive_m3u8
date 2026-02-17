@@ -37,7 +37,7 @@ void global_cleanup()
 int main(int argc, char *argv[])
 {
     int     err = 0;
-    char   *out_name = NULL;
+    char   *out_name_base = NULL;
     char   *url_m3u8 = NULL;
     Buffer *buffer_url_m3u8 = NULL;
     Buffer *buffer_index_m3u8 = NULL;
@@ -121,11 +121,12 @@ int main(int argc, char *argv[])
     time_t     time_now = time(NULL);
     struct tm *tm_s = gmtime(&time_now);
 
-    asprintf(&out_name, "%s/%d%02d%d-%s.mp4", live_info->out_path,
+    asprintf(&out_name_base, "%s/%d%02d%d-%s", live_info->out_path,
              tm_s->tm_year + 1900, tm_s->tm_mon + 1, tm_s->tm_mday,
              live_info->mid);
 
-    if (api_segment_download(base_url, init_seg, begin_seg, out_name) < 0) {
+    if (api_segment_download(base_url, init_seg, begin_seg, out_name_base) <
+        0) {
         error("Aborted and return 1");
         err = 1;
         goto end;
@@ -144,8 +145,8 @@ end:
     if (begin_seg != NULL) {
         free(begin_seg);
     }
-    if (out_name != NULL) {
-        free(out_name);
+    if (out_name_base != NULL) {
+        free(out_name_base);
     }
     if (buffer_index_m3u8->buffer != NULL) {
         free(buffer_index_m3u8->buffer);

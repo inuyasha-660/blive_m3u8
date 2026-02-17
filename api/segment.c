@@ -57,6 +57,29 @@ int api_download(const char *url, const char *filename)
     return 0;
 }
 
+// 校正下载的直播流时长
+int duration_revise(const char *filename, const char *out_name_base)
+{
+    int   err = 0;
+    char *command = NULL;
+    asprintf(&command, "ffmpeg -i %s -c copy -map 0 -f mp4 %s.mp4", filename,
+             out_name_base);
+
+    if ((err = system(command)) < 0) {
+        error("Failed to call %s", command);
+        goto end;
+    }
+    if ((err = remove(filename) < 0)) {
+        error("Failed to remove %s", filename);
+    }
+
+    info("Save to %s.mp4", out_name_base);
+
+end:
+    free(command);
+    return err;
+}
+
 int get_should_close(void *arg)
 {
     char  *input = NULL;
@@ -71,8 +94,11 @@ int get_should_close(void *arg)
 }
 
 int api_segment_download(const char *base_url, const char *init_seg,
-                         const char *begin_seg, const char *out_name)
+                         const char *begin_seg, const char *out_name_base)
 {
+    char *out_name = NULL;
+    asprintf(&out_name, "%s.m4s", out_name_base);
+
     // 下载初始化片段
     char *url_init_seg = NULL;
     asprintf(&url_init_seg, "%s%s", base_url, init_seg);
@@ -97,8 +123,10 @@ int api_segment_download(const char *base_url, const char *init_seg,
     sleep:
         __sleep_ms(TTL_MS);
     }
-    info("Save to %s", out_name);
+    info("Revise duration of live stream");
+    duration_revise(out_name, out_name_base);
 
+    free(out_name);
     free(url_init_seg);
     return 0;
 }
