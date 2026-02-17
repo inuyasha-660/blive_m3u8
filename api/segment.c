@@ -112,10 +112,19 @@ int api_segment_download(const char *base_url, const char *init_seg,
     thrd_create(&th_get_should_close, get_should_close, NULL);
 
     int idx_seg = atoi(begin_seg);
+    int total_err = 0;
     while (!shouldClose) {
+        // 错误 3 次以上停止录制
+        if (total_err > 3) {
+            warn("Stop recording since total_err > 3");
+            warn("Possible caused by the end of live");
+            break;
+        }
+
         char *url_seg = NULL;
         asprintf(&url_seg, "%s%d.m4s", base_url, idx_seg);
         if (api_download(url_seg, out_name) < 0) {
+            total_err += 1;
             goto sleep;
         }
         idx_seg += 1;
