@@ -47,8 +47,8 @@ int main(int argc, char *argv[])
 
     // 参数数量校验
     if (argc != 2) {
-        error("Need one arguments but passed %d\n", argc);
-        printn("blive_m3u8 <config>\n");
+        error("Need one arguments but passed %d", argc);
+        printn("Usage: blive_m3u8 <config>");
         return 1;
     }
 

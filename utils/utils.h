@@ -19,8 +19,8 @@ void _log(int log_level, const char *func, char *format, ...);
     #include <time.h> 
     #define __sleep_ms(ms) do { \
         struct timespec duration = { \
-            .tv_sec = 0, \
-            .tv_nsec = ms * 1000 * 1000 \
+            .tv_sec = (time_t)(ms / 1000), \
+            .tv_nsec = (ms % 1000) * 1000000 \
         }; \
         struct timespec rem; \
         \

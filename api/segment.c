@@ -1,6 +1,7 @@
 #include "api.h"
 #include "utils/utils.h"
 #include <curl/curl.h>
+#include <curl/easy.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <threads.h>
@@ -8,14 +9,13 @@
 extern LiveInfo *live_info;
 int              shouldClose = 0;
 
-int api_download(const char *url, const char *filename)
+int api_download(CURL *curl, const char *url, const char *filename)
 {
     if (url == NULL) {
         error("url is NULL");
         return -1;
     }
 
-    CURL *curl = curl_easy_init();
     if (curl) {
         int      err = 0;
         CURLcode code_download;
@@ -28,6 +28,8 @@ int api_download(const char *url, const char *filename)
             err = -1;
             goto end;
         }
+
+        printf("[GET] %s\n", url);
 
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, out_f);
@@ -47,7 +49,6 @@ int api_download(const char *url, const char *filename)
         }
     end:
         fclose(out_f);
-        curl_easy_cleanup(curl);
         return err;
     } else {
         error("Failed to initialize curl");
@@ -100,9 +101,11 @@ int api_segment_download(const char *base_url, const char *init_seg,
     asprintf(&out_name, "%s.m4s", out_name_base);
 
     // 下载初始化片段
+    CURL *curl_seg = curl_easy_init();
     char *url_init_seg = NULL;
+
     asprintf(&url_init_seg, "%s%s", base_url, init_seg);
-    if (api_download(url_init_seg, out_name) < 0) {
+    if (api_download(curl_seg, url_init_seg, out_name) < 0) {
         error("Failed to download init_seg: %s", url_init_seg);
         free(url_init_seg);
         return 0;
@@ -123,7 +126,7 @@ int api_segment_download(const char *base_url, const char *init_seg,
 
         char *url_seg = NULL;
         asprintf(&url_seg, "%s%d.m4s", base_url, idx_seg);
-        if (api_download(url_seg, out_name) < 0) {
+        if (api_download(curl_seg, url_seg, out_name) < 0) {
             total_err += 1;
             goto sleep;
         }
@@ -135,6 +138,7 @@ int api_segment_download(const char *base_url, const char *init_seg,
     info("Revise duration of live stream");
     duration_revise(out_name, out_name_base);
 
+    curl_easy_cleanup(curl_seg);
     free(out_name);
     free(url_init_seg);
     return 0;
