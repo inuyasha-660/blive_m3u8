@@ -29,8 +29,6 @@ int api_download(CURL *curl, const char *url, const char *filename)
             goto end;
         }
 
-        printf("[GET] %s\n", url);
-
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, out_f);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
