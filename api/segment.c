@@ -97,6 +97,8 @@ int api_segment_download(const char *base_url, const char *init_seg,
     char *out_name = NULL;
     asprintf(&out_name, "%s.m4s", out_name_base);
 
+    __mkdir(live_info->out_path);
+
     // 下载初始化片段
     CURL *curl_seg = curl_easy_init();
     char *url_init_seg = NULL;

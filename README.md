@@ -26,10 +26,6 @@ BiliBili 直播取流工具
 | 400   | 1080P蓝光 |
 | 10000 | 1080P原画 |
 
-
-> [!NOTE]
-> ``out_path``必须提前创建
-
 ## 构建
 项目使用 [Meson](https://mesonbuild.com/) 构建，依赖 [yyjson](https://github.com/ibireme/yyjson)，[libcurl](https://curl.se/libcurl/) 和 ``ffmpeg`` 命令
 

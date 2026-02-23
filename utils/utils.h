@@ -15,8 +15,11 @@ void _log(int log_level, const char *func, char *format, ...);
 #if defined(_WIN32)
     #include <windows.h>
     #define __sleep_ms(ms) do { Sleep(ms); } while(0)
+    #define __mkdir(dirname) (CreateDirectoryW(dirname, NULL))
 #elif defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined (__OpenBSD__) || defined(__APPLE__)
-    #include <time.h> 
+    #include <time.h>
+    #include <fcntl.h>
+    #include <sys/stat.h>
     #define __sleep_ms(ms) do { \
         struct timespec duration = { \
             .tv_sec = (time_t)(ms / 1000), \
@@ -26,6 +29,7 @@ void _log(int log_level, const char *func, char *format, ...);
         \
         nanosleep(&duration, &rem); \
     } while (0)
+    #define __mkdir(dirname)  (mkdir(dirname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
 #else
     #error "Unsupported system"
 #endif
