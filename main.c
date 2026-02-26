@@ -53,71 +53,63 @@ int main(int argc, char *argv[])
     }
 
     // 全局初始化
-    info("Initialize...");
     if (global_init() < 0) {
-        error("Aborted and return 1");
+        error("Failed to initialize global");
         global_init();
         return 1;
     }
 
     // 读取用户配置
-    info("Read user config");
     char *json_str = read_file(argv[1]);
     if (user_config_parser(json_str) < 0) {
-        error("Aborted and return 1");
+        error("Failed to read user json configuration");
         return 1;
     }
     free(json_str);
 
     // 获取 url.m3u8
-    info("Fetch url.m3u8");
     asprintf(&url_m3u8, "%s?cid=%s&mid=%s", API_URL_M3U8, live_info->cid,
              live_info->mid);
     buffer_url_m3u8 = api_get_response(url_m3u8);
     if (buffer_url_m3u8 == NULL) {
-        error("Aborted and return 1");
+        error("(url.m3u8) Failed to get %s", url_m3u8);
         err = 1;
         goto end;
     }
 
     // 获取目标 URL
-    info("Fetch url of target qn");
     url_qn = url_get_url(buffer_url_m3u8->buffer);
     if (url_qn == NULL) {
-        error("Aborted and return 1");
-        err = 1;
-        goto end;
-    }
-
-    // 获取 index.m3u8
-    info("Fetch index.m3u8");
-    buffer_index_m3u8 = api_get_response(url_qn);
-    if (buffer_index_m3u8 == NULL) {
-        error("Aborted and return 1");
+        error("Failed to parse the url of target qn");
         err = 1;
         goto end;
     }
 
     // 获取基本 URL
-    info("Parse base url");
     base_url = get_base_url(url_qn);
     if (base_url == NULL) {
-        error("Aborted and return 1");
+        error("Failed to parse the basic url");
+        err = 1;
+        goto end;
+    }
+
+    // 获取 index.m3u8
+    buffer_index_m3u8 = api_get_response(url_qn);
+    if (buffer_index_m3u8 == NULL) {
+        error("Failed to get index.m3u8");
         err = 1;
         goto end;
     }
 
     // 解析初始化片段和开始片段
-    info("Parse init_seg and begin_seg");
     index_m3u8_parser(buffer_index_m3u8->buffer, &init_seg, &begin_seg);
     if (init_seg == NULL || begin_seg == NULL) {
-        error("Aborted and return 1");
+        error("Failed to parse init_seg and begin_seg");
         err = 1;
         goto end;
     }
 
     // 开始录制
-    info("Start recording");
     time_t     time_now = time(NULL);
     struct tm *tm_s = gmtime(&time_now);
 
@@ -127,7 +119,7 @@ int main(int argc, char *argv[])
 
     if (api_segment_download(base_url, init_seg, begin_seg, out_name_base) <
         0) {
-        error("Aborted and return 1");
+        error("Failed to download stream segment");
         err = 1;
         goto end;
     }
