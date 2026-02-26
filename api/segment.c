@@ -134,7 +134,6 @@ int api_segment_download(const char *base_url, const char *init_seg,
     sleep:
         __sleep_ms(TTL_MS);
     }
-    info("Revise duration of live stream");
     duration_revise(out_name, out_name_base);
 
     curl_easy_cleanup(curl_seg);
